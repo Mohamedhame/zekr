@@ -9,6 +9,7 @@ import 'package:zekr/view/azkar.dart';
 import 'package:zekr/view/counter.dart';
 import 'package:zekr/view/hadith/hadith.dart';
 import 'package:zekr/view/quran/audio_play.dart';
+import 'package:zekr/view/serah/serah.dart';
 import 'package:zekr/view/task/notes.dart';
 import 'package:zekr/view/quran/quraa.dart';
 import 'package:zekr/view/settings.dart';
@@ -54,7 +55,8 @@ class HomePage extends StatelessWidget {
                           CustomPage(
                               text: "قران كريم ",
                               onTap: () {
-                                if (controller.audioPlayer.playing) {
+                                if (controller.audioPlayer.playing &&
+                                    !controller.isSerah.value) {
                                   Get.to(() => AudioPlay());
                                 } else {
                                   Get.offAll(() => Quraa());
@@ -69,6 +71,18 @@ class HomePage extends StatelessWidget {
                               text: "أذكار الصباح والمساء",
                               onTap: () {
                                 Get.to(() => Azkar());
+                              }),
+                          CustomPage(
+                              text: "السيره النبوية",
+                              onTap: () {
+                                if (controller.audioPlayer.playing &&
+                                    controller.isSerah.value) {
+                                  Get.to(() => AudioPlay());
+                                } else {
+                                  Get.to(() => Serah(
+                                        shikhName: "الدكتور راغب السرجاني",
+                                      ));
+                                }
                               }),
                           CustomPage(
                               text: "السبحة",

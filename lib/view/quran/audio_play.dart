@@ -22,7 +22,7 @@ class AudioPlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         image: DecorationImage(
             image: AssetImage("images/background.jpg"), fit: BoxFit.cover),
       ),
@@ -30,7 +30,10 @@ class AudioPlay extends StatelessWidget {
         appBar: AppBar(
           leading: InkWell(
             onTap: () {
-              Get.offAll(() => Quraa());
+              !controller.isSerah.value
+                  ? Get.offAll(() => Quraa())
+                  : Get.back();
+              print(controller.isSerah.value);
             },
             child: const Icon(
               CupertinoIcons.back,
@@ -264,7 +267,7 @@ class CustomImage extends StatelessWidget {
         turns:
             Tween(begin: 0.0, end: 1.0).animate(controller.animationController),
         child: Image.asset(
-          "images/quran.jpg",
+          controller.isSerah.value ? "images/1.jpg" : "images/quran.jpg",
           fit: BoxFit.cover,
         ),
       ),

@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
+import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:zekr/const/const.dart';
+import 'package:zekr/controller/download/download.dart';
 import 'package:zekr/controller/download/getPath_permisisson_anthor.dart';
 import 'package:zekr/controller/onlin_data/supabas_data.dart';
 import 'package:zekr/controller/shared/shared_data.dart';
@@ -19,6 +21,8 @@ class HomeController extends GetxController
   RxList filteredQuraa = [].obs;
   RxList allSurah = [].obs;
   RxList filteredSurah = [].obs;
+  RxList allSerah = [].obs;
+  RxList filteredSerah = [].obs;
   final AudioPlayer audioPlayer = AudioPlayer();
   RxInt playIndex = 0.obs;
   RxBool isPlaying = false.obs;
@@ -50,12 +54,12 @@ class HomeController extends GetxController
   RxInt pageCount = 0.obs;
   RxInt timeRemember = 15.obs;
   RxBool isSilent = false.obs;
+  RxBool isSerah = false.obs;
   // ========= Functions ===========================
 
   Future<ConcatenatingAudioSource> initializePlaylist(List myList) async {
     List<AudioSource> audioSources = [];
 
-    // تنفيذ التحقق لكل عنصر بشكل مستقل
     for (int index = 0; index < myList.length; index++) {
       String url;
       if (isExit[index]) {
@@ -86,10 +90,14 @@ class HomeController extends GetxController
 
   Future<void> initMusic(
       {required int startIndex, required List myList}) async {
-    await audioPlayer.setLoopMode(LoopMode.all);
-    ConcatenatingAudioSource playlist = await initializePlaylist(myList);
-    await audioPlayer.setAudioSource(playlist, initialIndex: startIndex);
-    await audioPlayer.seek(Duration.zero, index: startIndex);
+    try {
+      await audioPlayer.setLoopMode(LoopMode.all);
+      ConcatenatingAudioSource playlist = await initializePlaylist(myList);
+      await audioPlayer.setAudioSource(playlist, initialIndex: startIndex);
+      await audioPlayer.seek(Duration.zero, index: startIndex);
+    } catch (e) {
+      log(e.toString());
+    }
   }
 
 //========================================
@@ -187,6 +195,24 @@ class HomeController extends GetxController
     filteredSurah.value = filtered;
   }
 
+  // xxxxxxxxxxxxxxxxx Serah ==============================
+
+  Future<void> fetchSerah() async {
+    final data = await SupabasData().readDataFromSerahTable();
+    allSerah.value = data;
+    filteredSerah.value = allSerah;
+  }
+
+  void runFilterSerah(String enteredKeyword) {
+    List filtered = allSerah
+        .where((element) => element['name']
+            .toString()
+            .toLowerCase()
+            .contains(enteredKeyword.toLowerCase()))
+        .toList();
+    filteredSerah.value = filtered;
+  }
+
 // check connetion to internet
   void updateConnectivityStatus(List<ConnectivityResult> connectivityResult) {
     if (connectivityResult.contains(ConnectivityResult.none)) {
@@ -270,5 +296,69 @@ class HomeController extends GetxController
   void onClose() {
     super.onClose();
     animationController.dispose();
+  }
+
+  //==========
+  Widget icons(
+    int index,
+    String shikhName,
+    String fileName,
+    String url,
+    Color textColors,
+  ) {
+    return IconButton(
+      onPressed: () {
+        if (isConnective.value) {
+          if (!isExit[index]) {
+            if (isDownloding.value) {
+              isDownloding.value = false;
+              Download().cancel();
+            } else {
+              isDownloding.value = true;
+              Download().startDownload(
+                dir: shikhName,
+                fileName:
+                    fileName, //"${controller.filteredSurah[index]['name']}",
+                url: url, // "${controller.filteredSurah[index]['url']}",
+              );
+            }
+            playIndex.value = index;
+          }
+        } else {
+          Get.snackbar(
+            "خطأ",
+            "تحقق من الاتصال بالشبكة",
+            backgroundColor: Colors.black,
+            colorText: Colors.white,
+            icon: const Icon(
+              Icons.wifi_off,
+              color: Colors.red,
+            ),
+          );
+        }
+      },
+      color: textColors,
+      iconSize: 20,
+      icon: Obx(
+        () => isDownloding.value && playIndex.value == index
+            ? CircularPercentIndicator(
+                radius: 15,
+                lineWidth: 2,
+                percent: progress.value,
+                circularStrokeCap: CircularStrokeCap.round,
+                progressColor: Colors.redAccent,
+                backgroundColor: Colors.greenAccent,
+              )
+            : isExit[index]
+                ? Icon(
+                    Icons.download_done,
+                    color: textColor.value,
+                  )
+                : Icon(
+                    Icons.download,
+                    color: textColor.value,
+                  ),
+      ),
+    );
   }
 }

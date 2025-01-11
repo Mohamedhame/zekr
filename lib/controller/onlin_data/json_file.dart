@@ -32,4 +32,27 @@ class JsonFile {
     }
     return names;
   }
+
+  //=====
+
+  static Future<List<Map>> readSerah(String path) async {
+    List<Map<String, dynamic>> names = [];
+    try {
+      final Directory directory = await getApplicationDocumentsDirectory();
+      final File file = File('${directory.path}/$path');
+      String text = await file.readAsString();
+      List<dynamic> jsonData = jsonDecode(text);
+
+      for (var element in jsonData) {
+        names.add({
+          "id": element['id'],
+          "name": element['name'],
+          "url": element['url']
+        });
+      }
+    } catch (e) {
+      print("Couldn't read file");
+    }
+    return names;
+  }
 }

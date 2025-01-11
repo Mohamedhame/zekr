@@ -12,16 +12,6 @@ class SupabasData {
   final supabase = Supabase.instance.client;
   final controller = Get.find<HomeController>();
   //======================== Functions ===================================
-  // Sign In to supabase
-  void signIn() async {
-    try {
-      await supabase.auth
-          .signInWithPassword(password: "123456", email: "mohamed@email.com");
-      log("Successfully");
-    } catch (e) {
-      print(e);
-    }
-  }
 
   // Get Quraa from Supabase
 
@@ -77,7 +67,6 @@ class SupabasData {
 
 //================hadith==================
   Future<List> readData() async {
-    signIn();
     final data = supabase.from('hadith').select();
 
     return data;
@@ -119,6 +108,34 @@ class SupabasData {
       }
     } catch (e) {
       print("Error in insertIntoDatabase: $e");
+    }
+  }
+
+  //=============== Serah =====//
+  Future<List<Map>> readDataFromSerahTable() async {
+    List<Map<String, dynamic>> names = [];
+    final readFromJson = await JsonFile.readSerah('serah.json');
+    if (readFromJson.isNotEmpty) {
+      log("From Json");
+      return readFromJson;
+    } else {
+      log("From Supabase");
+
+      if (controller.isConnective.value) {
+        final data = supabase.from('serah').select();
+
+        for (var element in await data) {
+          names.add({
+            "id": element["id"],
+            "name": element['name'],
+            "url": element['url'],
+          });
+        }
+        String updatedJsonString = jsonEncode(names);
+        await JsonFile.writeTemp('serah.json', updatedJsonString);
+      }
+
+      return names;
     }
   }
 }
